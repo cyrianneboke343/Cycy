@@ -70,3 +70,221 @@ if ($_POST) {
     </div>
 </body>
 </html>
+
+<?php
+require_once '../config/bdd.php';
+require_once '../config/session.php';
+
+$erreur = '';
+
+if ($_POST) {
+    $nom_utilisateur = trim($_POST['nom_utilisateur'] ?? '');
+    $mot_de_passe = $_POST['mot_de_passe'] ?? '';
+
+    if (!empty($nom_utilisateur) && !empty($mot_de_passe)) {
+        try {
+            $stmt = $pdo->prepare("SELECT id, mot_de_passe FROM administrateurs WHERE nom_utilisateur = ?");
+            $stmt->execute([$nom_utilisateur]);
+            $admin = $stmt->fetch();
+
+            if ($admin && password_verify($mot_de_passe, $admin['mot_de_passe'])) {
+                $_SESSION['admin_id'] = $admin['id'];
+                header('Location: tableau-bord.php');
+                exit();
+            } else {
+                $erreur = "Nom d'utilisateur ou mot de passe incorrect";
+            }
+        } catch (PDOException $e) {
+            $erreur = "Erreur de connexion";
+        }
+    } else {
+        $erreur = "Veuillez remplir tous les champs";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion Admin - Plateforme de Paiement</title>
+    <link rel="stylesheet" href="../ressource/css/style.css">
+</head>
+<body>
+    <div class="conteneur-formulaire">
+        <div class="carte-formulaire">
+            <h2>Connexion Administrateur</h2>
+            
+            <?php if (!empty($erreur)): ?>
+                <div class="message-erreur">
+                    <p><?= htmlspecialchars($erreur) ?></p>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="groupe-champ">
+                    <label for="nom_utilisateur">Nom d'utilisateur</label>
+                    <input type="text" id="nom_utilisateur" name="nom_utilisateur" value="<?= htmlspecialchars($_POST['nom_utilisateur'] ?? '') ?>" required>
+                </div>
+
+                <div class="groupe-champ">
+                    <label for="mot_de_passe">Mot de passe</label>
+                    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+                </div>
+
+                <button type="submit" class="btn btn-admin btn-large">Se connecter</button>
+            </form>
+
+            <div class="liens-formulaire">
+                <a href="../index.php">Retour à l'accueil</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<?php
+require_once '../config/bdd.php';
+require_once '../config/session.php';
+
+$erreur = '';
+
+if ($_POST) {
+    $nom_utilisateur = trim($_POST['nom_utilisateur'] ?? '');
+    $mot_de_passe = $_POST['mot_de_passe'] ?? '';
+
+    if (!empty($nom_utilisateur) && !empty($mot_de_passe)) {
+        try {
+            $stmt = $pdo->prepare("SELECT id, mot_de_passe FROM administrateurs WHERE nom_utilisateur = ?");
+            $stmt->execute([$nom_utilisateur]);
+            $admin = $stmt->fetch();
+
+            if ($admin && password_verify($mot_de_passe, $admin['mot_de_passe'])) {
+                $_SESSION['admin_id'] = $admin['id'];
+                header('Location: tableau-bord.php');
+                exit();
+            } else {
+                $erreur = "Nom d'utilisateur ou mot de passe incorrect";
+            }
+        } catch (PDOException $e) {
+            $erreur = "Erreur de connexion";
+        }
+    } else {
+        $erreur = "Veuillez remplir tous les champs";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion Admin - Plateforme de Paiement</title>
+    <link rel="stylesheet" href="../ressource/css/style.css">
+</head>
+<body>
+    <div class="conteneur-formulaire">
+        <div class="carte-formulaire">
+            <h2>Connexion Administrateur</h2>
+            
+            <?php if (!empty($erreur)): ?>
+                <div class="message-erreur">
+                    <p><?= htmlspecialchars($erreur) ?></p>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="groupe-champ">
+                    <label for="nom_utilisateur">Nom d'utilisateur</label>
+                    <input type="text" id="nom_utilisateur" name="nom_utilisateur" value="<?= htmlspecialchars($_POST['nom_utilisateur'] ?? '') ?>" required>
+                </div>
+
+                <div class="groupe-champ">
+                    <label for="mot_de_passe">Mot de passe</label>
+                    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+                </div>
+
+                <button type="submit" class="btn btn-admin btn-large">Se connecter</button>
+            </form>
+
+            <div class="liens-formulaire">
+                <a href="../index.php">Retour à l'accueil</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+<?php
+require_once '../config/bdd.php';
+require_once '../config/session.php';
+
+$erreur = '';
+
+if ($_POST) {
+    $nom_utilisateur = trim($_POST['nom_utilisateur'] ?? '');
+    $mot_de_passe = $_POST['mot_de_passe'] ?? '';
+
+    if (!empty($nom_utilisateur) && !empty($mot_de_passe)) {
+        try {
+            $stmt = $pdo->prepare("SELECT id, mot_de_passe FROM administrateurs WHERE nom_utilisateur = ?");
+            $stmt->execute([$nom_utilisateur]);
+            $admin = $stmt->fetch();
+
+            if ($admin && password_verify($mot_de_passe, $admin['mot_de_passe'])) {
+                $_SESSION['admin_id'] = $admin['id'];
+                header('Location: tableau-bord.php');
+                exit();
+            } else {
+                $erreur = "Nom d'utilisateur ou mot de passe incorrect";
+            }
+        } catch (PDOException $e) {
+            $erreur = "Erreur de connexion";
+        }
+    } else {
+        $erreur = "Veuillez remplir tous les champs";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion Admin - Plateforme de Paiement</title>
+    <link rel="stylesheet" href="../ressource/css/style.css">
+</head>
+<body>
+    <div class="conteneur-formulaire">
+        <div class="carte-formulaire">
+            <h2>Connexion Administrateur</h2>
+            
+            <?php if (!empty($erreur)): ?>
+                <div class="message-erreur">
+                    <p><?= htmlspecialchars($erreur) ?></p>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="groupe-champ">
+                    <label for="nom_utilisateur">Nom d'utilisateur</label>
+                    <input type="text" id="nom_utilisateur" name="nom_utilisateur" value="<?= htmlspecialchars($_POST['nom_utilisateur'] ?? '') ?>" required>
+                </div>
+
+                <div class="groupe-champ">
+                    <label for="mot_de_passe">Mot de passe</label>
+                    <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+                </div>
+
+                <button type="submit" class="btn btn-admin btn-large">Se connecter</button>
+            </form>
+
+            <div class="liens-formulaire">
+                <a href="../index.php">Retour à l'accueil</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
