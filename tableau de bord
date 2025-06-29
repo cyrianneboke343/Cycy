@@ -1,0 +1,224 @@
+<?php
+require_once '../config/bdd.php';
+require_once '../config/session.php';
+verifier_session_admin();
+
+$stmt = $pdo->query("SELECT 
+    COUNT(*) as total_paiements,
+    SUM(CASE WHEN statut = 'en_attente' THEN 1 ELSE 0 END) as en_attente,
+    SUM(CASE WHEN statut = 'valide' THEN 1 ELSE 0 END) as valides,
+    SUM(CASE WHEN statut = 'refuse' THEN 1 ELSE 0 END) as refuses,
+    SUM(CASE WHEN statut = 'valide' THEN montant ELSE 0 END) as montant_total
+    FROM paiements");
+$statistiques = $stmt->fetch();
+
+$stmt = $pdo->query("SELECT COUNT(DISTINCT matricule) as total_etudiants FROM paiements");
+$total_etudiants = $stmt->fetch()['total_etudiants'];
+
+$stmt = $pdo->query("SELECT * FROM paiements WHERE statut = 'en_attente' ORDER BY date_paiement DESC LIMIT 10");
+$paiements_attente = $stmt->fetchAll();
+
+$stmt = $pdo->query("SELECT 
+    DATE(date_paiement) as date,
+    SUM(montant) as total_montant,
+    COUNT(*) as nombre_paiements
+    FROM paiements 
+    WHERE statut = 'valide' 
+    AND date_paiement >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY DATE(date_paiement)
+    ORDER BY date ASC");
+$donnees_graphique = $stmt->fetchAll();
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord - Administration</title>
+    <link rel="stylesheet" href="../ressource/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="header-dashboard header-admin">
+        <div class="conteneur">
+            <h1>Administration</h1>
+            <nav>
+                <a href="gestion-paiements.php" class="btn btn-admin">Gérer Paiements</a>
+                <a href="../config/deconnexion.php" class="btn btn-outline">Déconnexion</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenu-dashboard">
+        <div class="conteneur">
+            <div class="statistiques-admin">
+                <div class="carte-stat">
+                    <h3><?= $total_etudiants ?></h3>
+                    <p>Étudiants uniques</p>
+                </div>
+                <div class="carte-stat">
+                    <h3><?= $statistiques['total_paiements'] ?></h3>
+                    <p>Paiements total</p>
+                </div>
+                <div class="carte-stat carte-attente">
+                    <h3><?= $statistiques['en_attente'] ?></h3>
+                    <p>En attente</p>
+                </div>
+                <div class="carte-stat carte-valide">
+                    <h3><?= $statistiques['valides'] ?></h3>
+                    <p>Validés</p>
+                </div>
+                <div class="carte-stat carte-refuse">
+                    <h3><?= $statistiques['refuses'] ?></h3>
+                    <p>Refusés</p>
+                </div>
+                <div class="carte-stat">
+                    <h3>$<?= number_format($statistiques['montant_total'], 2) ?></h3>
+                    <p>Montant total validé</p>
+                </div>
+            </div>
+
+            <div class="graphique-container">
+                <h3>Évolution des Paiements (30 derniers jours)</h3>
+                <canvas id="graphiquePaiements"></canvas>
+            </div>
+
+            <div class="section-paiements">
+                <div class="header-section">
+                    <h3>Paiements en Attente</h3>
+                    <a href="gestion-paiements.php" class="btn btn-admin">Voir Tous</a>
+                </div>
+
+                <?php if (empty($paiements_attente)): ?>
+                    <div class="message-vide">
+                        <p>Aucun paiement en attente</p>
+                    </div>
+                <?php else: ?>
+                    <div class="tableau-responsive">
+                        <table class="tableau-paiements">
+                            <thead>
+                                <tr>
+                                    <th>Étudiant</th>
+                                    <th>Matricule</th>
+                                    <th>Email</th>
+                                    <th>Montant</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($paiements_attente as $paiement): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($paiement['nom'] . ' ' . $paiement['postnom'] . ' ' . $paiement['prenom']) ?></td>
+                                        <td><?= htmlspecialchars($paiement['matricule']) ?></td>
+                                        <td><?= htmlspecialchars($paiement['email']) ?></td>
+                                        <td>$<?= number_format($paiement['montant'], 2) ?></td>
+                                        <td><?= date('d/m/Y H:i', strtotime($paiement['date_paiement'])) ?></td>
+                                        <td>
+                                            <a href="valider-paiement.php?id=<?= $paiement['id'] ?>&action=valider" class="btn btn-petit btn-valide">Valider</a>
+                                            <a href="valider-paiement.php?id=<?= $paiement['id'] ?>&action=refuser" class="btn btn-petit btn-refuse">Refuser</a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const ctx = document.getElementById('graphiquePaiements').getContext('2d');
+        const donneesGraphique = <?= json_encode($donnees_graphique) ?>;
+        
+        const labels = donneesGraphique.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+        });
+        
+        const montants = donneesGraphique.map(item => parseFloat(item.total_montant));
+        const nombres = donneesGraphique.map(item => parseInt(item.nombre_paiements));
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Montant ($)',
+                    data: montants,
+                    backgroundColor: 'rgba(99, 179, 237, 0.8)',
+                    borderColor: 'rgba(99, 179, 237, 1)',
+                    borderWidth: 2,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Nombre de paiements',
+                    data: nombres,
+                    backgroundColor: 'rgba(56, 161, 105, 0.8)',
+                    borderColor: 'rgba(56, 161, 105, 1)',
+                    borderWidth: 2,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#90cdf4'
+                        }
+                    },
+                    title: {
+                        display: false
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#cbd5e0'
+                        },
+                        grid: {
+                            color: 'rgba(203, 213, 224, 0.2)'
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Montant ($)',
+                            color: '#90cdf4'
+                        },
+                        ticks: {
+                            color: '#cbd5e0'
+                        },
+                        grid: {
+                            color: 'rgba(203, 213, 224, 0.2)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Nombre',
+                            color: '#90cdf4'
+                        },
+                        ticks: {
+                            color: '#cbd5e0'
+                        },
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
