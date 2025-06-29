@@ -1,0 +1,27 @@
+<?php
+require_once '../config/bdd.php';
+require_once '../config/session.php';
+verifier_session_admin();
+
+$id = intval($_GET['id'] ?? 0);
+$action = $_GET['action'] ?? '';
+
+if ($id > 0 && in_array($action, ['valider', 'refuser'])) {
+    $nouveau_statut = $action === 'valider' ? 'valide' : 'refuse';
+    
+    try {
+        $stmt = $pdo->prepare("UPDATE paiements SET statut = ? WHERE id = ?");
+        $stmt->execute([$nouveau_statut, $id]);
+        
+        $message = $action === 'valider' ? 'Paiement validé avec succès' : 'Paiement refusé';
+        header("Location: gestion-paiements.php?message=" . urlencode($message));
+        exit();
+    } catch (PDOException $e) {
+        header("Location: gestion-paiements.php?erreur=Erreur lors de la mise à jour");
+        exit();
+    }
+} else {
+    header("Location: gestion-paiements.php");
+    exit();
+}
+?>
