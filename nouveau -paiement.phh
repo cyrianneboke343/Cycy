@@ -1,0 +1,118 @@
+<?php
+require_once '../config/bdd.php';
+
+$erreurs = [];
+$succes = false;
+
+if ($_POST) {
+    $nom = trim($_POST['nom'] ?? '');
+    $postnom = trim($_POST['postnom'] ?? '');
+    $prenom = trim($_POST['prenom'] ?? '');
+    $matricule = trim($_POST['matricule'] ?? '');
+    $email = trim($_POST['email'] ?? '');
+    $montant = floatval($_POST['montant'] ?? 0);
+    
+    if (empty($nom)) $erreurs[] = "Le nom est obligatoire";
+    if (empty($postnom)) $erreurs[] = "Le postnom est obligatoire";
+    if (empty($prenom)) $erreurs[] = "Le prénom est obligatoire";
+    if (empty($matricule)) {
+        $erreurs[] = "Le matricule est obligatoire";
+    } elseif (!preg_match('/^(SI|SE|DR|ME)\d{6}$/', $matricule)) {
+        $erreurs[] = "Format matricule invalide (ex: SI123456)";
+    }
+    if (empty($email)) $erreurs[] = "L'email est obligatoire";
+    if ($montant <= 0) $erreurs[] = "Le montant doit être supérieur à 0";
+
+    if (empty($erreurs)) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO paiements (nom, postnom, prenom, matricule, email, montant) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$nom, $postnom, $prenom, $matricule, $email, $montant]);
+            $succes = true;
+        } catch (PDOException $e) {
+            $erreurs[] = "Erreur lors de l'enregistrement du paiement";
+        }
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau Paiement</title>
+    <link rel="stylesheet" href="../ressource/css/style.css">
+</head>
+<body>
+    <header class="header-dashboard">
+        <div class="conteneur">
+            <h1>Nouveau Paiement</h1>
+            <nav>
+                <a href="../index.php" class="btn btn-secondaire">Retour Accueil</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="contenu-dashboard">
+        <div class="conteneur">
+            <div class="carte-formulaire">
+                <?php if ($succes): ?>
+                    <div class="message-succes">
+                        Paiement enregistré avec succès ! <a href="../index.php">Retour à l'accueil</a>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (!empty($erreurs)): ?>
+                    <div class="message-erreur">
+                        <?php foreach ($erreurs as $erreur): ?>
+                            <p><?= htmlspecialchars($erreur) ?></p>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+
+                <form method="POST" id="formulaire-paiement">
+                    <div class="groupe-champ">
+                        <label for="nom">Nom</label>
+                        <input type="text" id="nom" name="nom" value="<?= htmlspecialchars($_POST['nom'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="groupe-champ">
+                        <label for="postnom">Postnom</label>
+                        <input type="text" id="postnom" name="postnom" value="<?= htmlspecialchars($_POST['postnom'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="groupe-champ">
+                        <label for="prenom">Prénom</label>
+                        <input type="text" id="prenom" name="prenom" value="<?= htmlspecialchars($_POST['prenom'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="groupe-champ">
+                        <label for="matricule">Matricule</label>
+                        <input type="text" id="matricule" name="matricule" value="<?= htmlspecialchars($_POST['matricule'] ?? '') ?>" placeholder="Ex: SI123456" required>
+                        <small>Format: 2 lettres (SI, SE, DR, ME) + 6 chiffres</small>
+                    </div>
+
+                    <div class="groupe-champ">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="groupe-champ">
+                        <label for="montant">Montant ($)</label>
+                        <input type="number" id="montant" name="montant" step="0.01" min="0.01" value="<?= htmlspecialchars($_POST['montant'] ?? '') ?>" required>
+                    </div>
+
+                    <div class="info-paiement">
+                        <h4>Information importante</h4>
+                        <p>Ce paiement sera soumis à validation par l'administration. Vous recevrez une notification une fois le statut mis à jour.</p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primaire btn-large">Enregistrer le Paiement</button>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="../ressource/js/validation.js"></script>
+</body>
+</html>
